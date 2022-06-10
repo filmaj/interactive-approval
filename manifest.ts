@@ -9,7 +9,7 @@ export const ApprovalFunction = DefineFunction({
   callback_id: "approval",
   title: "Approval",
   description: "Get approval for a request",
-  source_file: "functions/approval.ts",
+  source_file: "functions/approval/mod.ts",
   input_parameters: {
     properties: {
       requester_id: {
