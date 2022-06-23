@@ -1,11 +1,26 @@
 import type { SlackFunctionHandler } from "deno-slack-sdk/types.ts";
 import { SlackAPI } from "deno-slack-api/mod.ts";
-import type { ApprovalFunction } from "../../manifest.ts";
+import type { ApprovalFunction } from "./definition.ts";
 import {
   renderApprovalCompletedMessage,
   renderApprovalMessage,
+  renderApprovalViewedMessage,
   renderModal,
 } from "./views.ts";
+
+// TODO: would be great to expose a type that provides the runtime inputs
+type Inputs = {
+  requester_id: string;
+  approval_channel_id: string;
+  subject: string;
+  details: string;
+};
+
+type Metadata = {
+  inputs: Inputs;
+  messageTS: string;
+  functionExecutionId: string;
+};
 
 const approval: SlackFunctionHandler<typeof ApprovalFunction.definition> =
   async (
@@ -34,7 +49,7 @@ export default approval;
 
 // let's assume actions is a single fn handler for any block actions your function receives
 // adding a routing layer to it should be possible in the sdk, i.e. route handlers by block/action id
-export const actions = async ({ action, body, token }: any) => {
+export const blockActions = async ({ action, body, token }: any) => {
   console.log("approval actions handler", action.action_id, body);
   if (action.action_id === "review_approval") {
     const state = JSON.parse(action.value as string);
@@ -57,8 +72,28 @@ export const actions = async ({ action, body, token }: any) => {
   }
 };
 
+export const viewClosed = async ({ view, body, token }: any) => {
+  console.log("viewClosed handler");
+  if (body.view.callback_id === "approval_modal") {
+    const view = body.view;
+    const userId = body.user.id;
+    const metadata = JSON.parse(view.private_metadata) as Metadata;
+    const { messageTS, inputs } = metadata;
+
+    const client = SlackAPI(token);
+    const msgResp = await client.chat.postMessage({
+      channel: inputs.approval_channel_id,
+      blocks: renderApprovalViewedMessage(userId),
+      thread_ts: messageTS,
+    });
+    if (!msgResp.ok) {
+      console.log("error posting approval viewed message", msgResp);
+    }
+  }
+};
+
 // Similarly to actions here, single fn export for all view subbmissions for this fn
-export const viewSubmissions = async ({ body, token }: any) => {
+export const viewSubmission = async ({ body, token }: any) => {
   if (body.view.callback_id === "approval_modal") {
     const view = body.view;
     const metadata = JSON.parse(view.private_metadata);
@@ -90,7 +125,6 @@ export const viewSubmissions = async ({ body, token }: any) => {
 
     const client = SlackAPI(token);
 
-    // Adding this in to make it easy to see outputs from this function for now
     const msgResp = await client.chat.postMessage({
       channel: metadata.inputs.approval_channel_id,
       thread_ts: metadata.messageTS,

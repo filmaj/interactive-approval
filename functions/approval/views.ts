@@ -44,11 +44,10 @@ export const renderApprovalCompletedMessage = (inputs: any, outputs: any) => {
       type: "context",
       elements: [
         {
-          type: "plain_text",
+          type: "mrkdwn",
           text: `${
-            outputs.approved ? "Approved" : "Denied"
+            outputs.approved ? " :white_check_mark: Approved" : ":x: Denied"
           } by <@${outputs.reviewer}>`,
-          emoji: true,
         },
       ],
     },
@@ -60,6 +59,20 @@ export const renderApprovalCompletedMessage = (inputs: any, outputs: any) => {
       text: {
         type: "mrkdwn",
         text: `*Subject:* ${inputs.subject}`,
+      },
+    },
+  ];
+  return blocks;
+};
+
+export const renderApprovalViewedMessage = (viewerId: string) => {
+  const blocks = [
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text:
+          `<@${viewerId}> viewed the approval, but noped out of it for now :woman-gesturing-no:`,
       },
     },
   ];
@@ -153,7 +166,8 @@ export const renderModal = (inputs: any, state: any) => {
         },
       },
     ],
-    "private_metadata": JSON.stringify(state),
+    private_metadata: JSON.stringify(state),
+    notify_on_close: true,
     type: "modal",
   };
 };
