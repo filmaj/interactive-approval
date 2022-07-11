@@ -34,6 +34,7 @@ const step1 = ApprovalWorkflow.addStep(ApprovalFunction, {
   subject: ApprovalWorkflow.inputs.subject,
 });
 
+// This is just really here to add some checks on using the outputs of the previous step
 ApprovalWorkflow.addStep("slack#/functions/send_message", {
   channel_id: ApprovalWorkflow.inputs.approval_channel_id,
   message: `workflow is dun`,
@@ -44,7 +45,6 @@ export default Manifest({
   name: "interactive-approval",
   description: "Appring allthethings",
   icon: "assets/icon.png",
-  functions: [ApprovalFunction],
   workflows: [ApprovalWorkflow],
   outgoingDomains: [],
   botScopes: ["commands", "chat:write", "chat:write.public"],

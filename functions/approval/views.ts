@@ -1,24 +1,18 @@
-export const renderApprovalMessage = (inputs: any, state: any) => {
+export const renderApprovalMessage = (inputs: any) => {
   const blocks = [
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: `A new request has been submitted`,
+      },
+    },
     {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `A new request has been submitted by <@${inputs.requester_id}>`,
+        text: `*From:* <@${inputs.requester_id}>`,
       },
-      accessory: {
-        type: "button",
-        text: {
-          type: "plain_text",
-          text: "Review for Approval",
-          emoji: true,
-        },
-        value: JSON.stringify(state),
-        action_id: "review_approval",
-      },
-    },
-    {
-      type: "divider",
     },
     {
       type: "section",
@@ -28,35 +22,34 @@ export const renderApprovalMessage = (inputs: any, state: any) => {
       },
     },
     {
-      type: "divider",
-    },
-    {
       type: "section",
-      block_id: "approve_deny_block",
       text: {
         type: "mrkdwn",
-        text: "Please approve or deny the request by indicating below",
+        text: `*Details:* ${inputs.details}`,
       },
-      accessory: {
-        type: "radio_buttons",
-        options: [
-          {
-            text: {
-              type: "mrkdwn",
-              text: "*Approved*",
-            },
-            value: "true",
+    },
+    {
+      "type": "actions",
+      "elements": [
+        {
+          type: "button",
+          text: {
+            type: "plain_text",
+            text: "Approve",
           },
-          {
-            text: {
-              type: "mrkdwn",
-              text: "*Denied*",
-            },
-            value: "false",
+          action_id: "approve_request",
+          style: "primary",
+        },
+        {
+          type: "button",
+          text: {
+            type: "plain_text",
+            text: "Deny",
           },
-        ],
-        action_id: "approve_deny_radios",
-      },
+          action_id: "deny_request",
+          style: "danger",
+        },
+      ],
     },
   ];
   return blocks;
@@ -65,10 +58,31 @@ export const renderApprovalMessage = (inputs: any, state: any) => {
 export const renderApprovalCompletedMessage = (inputs: any, outputs: any) => {
   const blocks = [
     {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: `A new request has been submitted`,
+      },
+    },
+    {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `A new request has been submitted by <@${inputs.requester_id}>`,
+        text: `*From:* <@${inputs.requester_id}>`,
+      },
+    },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `*Subject:* ${inputs.subject}`,
+      },
+    },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `*Details:* ${inputs.details}`,
       },
     },
     {
@@ -81,16 +95,6 @@ export const renderApprovalCompletedMessage = (inputs: any, outputs: any) => {
           } by <@${outputs.reviewer}>`,
         },
       ],
-    },
-    {
-      type: "divider",
-    },
-    {
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: `*Subject:* ${inputs.subject}`,
-      },
     },
   ];
   return blocks;
@@ -110,7 +114,7 @@ export const renderApprovalViewedMessage = (viewerId: string) => {
   return blocks;
 };
 
-export const renderModal = (inputs: any, state: any) => {
+export const renderModal = (inputs: any) => {
   return {
     "callback_id": "approval_modal",
     title: {
@@ -197,7 +201,6 @@ export const renderModal = (inputs: any, state: any) => {
         },
       },
     ],
-    private_metadata: JSON.stringify(state),
     notify_on_close: true,
     type: "modal",
   };
