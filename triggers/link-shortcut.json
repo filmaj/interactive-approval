@@ -1,0 +1,25 @@
+{
+  "type": "shortcut",
+  "name": "Request Laptop Approval",
+  "description": "requests approval",
+  "workflow": "#/workflows/approval_wf",
+  "shortcut": {},
+  "inputs": {
+    "approval_channel_id": {
+      "value": "{{data.channel_id}}",
+      "hidden": true
+    },
+    "requester_id": {
+      "value": "{{data.user_id}}",
+      "hidden": true
+    },
+    "subject": {
+      "value": "New Laptop Plz",
+      "hidden": true
+    },
+    "details": {
+      "value": "Can I please have a new laptop",
+      "hidden": true
+    }  
+  }
+}

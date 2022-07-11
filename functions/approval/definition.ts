@@ -1,7 +1,7 @@
 import { DefineFunction, Schema } from "deno-slack-sdk/mod.ts";
 
 export const ApprovalFunction = DefineFunction({
-  callback_id: "approval",
+  callback_id: "review_approval",
   title: "Approval",
   description: "Get approval for a request",
   source_file: "functions/approval/mod.ts",
@@ -48,7 +48,11 @@ export const ApprovalFunction = DefineFunction({
         type: Schema.slack.types.user_id,
         description: "Reviewer",
       },
+      message_ts: {
+        type: Schema.types.string,
+        description: "Request Message TS",
+      },
     },
-    required: ["approved", "comments", "reviewer"],
+    required: ["approved", "comments", "reviewer", "message_ts"],
   },
 });

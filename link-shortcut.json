@@ -1,0 +1,15 @@
+{
+  "type": "shortcut",
+  "name": "Request Approval",
+  "description": "requests approval",
+  "workflow": "#/workflows/approval_wf",
+  "shortcut": {},
+  "inputs": {
+    "approval_channel_id": {
+      "value": "{{data.channel_id}}"
+    },
+    "requester_id": {
+      "value": "{{data.user_id}}"
+    }
+  }
+}

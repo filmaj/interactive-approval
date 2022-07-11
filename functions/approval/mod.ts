@@ -24,9 +24,13 @@ type Metadata = {
 
 const approval: SlackFunctionHandler<typeof ApprovalFunction.definition> =
   async (
-    { inputs, token, event },
+    { inputs, token, event, env },
   ) => {
-    const client = SlackAPI(token);
+    console.log("token in fn", token);
+    console.log("inputs in fn", JSON.stringify(inputs, null, 2));
+    const client = SlackAPI(token, {
+      slackApiUrl: env.SLACK_API_URL,
+    });
 
     // TODO: This is the bit that is burdensome to pass around as a developer
     const state = {
@@ -34,14 +38,21 @@ const approval: SlackFunctionHandler<typeof ApprovalFunction.definition> =
       functionExecutionId: event.function_execution_id,
     };
 
-    await client.chat.postMessage({
-      channel: inputs.approval_channel_id,
-      blocks: renderApprovalMessage(inputs, state),
-    });
+    try {
+      const resp = await client.chat.postMessage({
+        channel: inputs.approval_channel_id,
+        blocks: renderApprovalMessage(inputs, state),
+      });
 
-    return await {
+      if (!resp.ok) {
+        console.log("Error posting message", resp);
+      }
+    } catch (e) {
+      console.log("Error posting message", e);
+    }
+
+    return {
       completed: false,
-      error: "",
     };
   };
 
@@ -49,26 +60,61 @@ export default approval;
 
 // let's assume actions is a single fn handler for any block actions your function receives
 // adding a routing layer to it should be possible in the sdk, i.e. route handlers by block/action id
-export const blockActions = async ({ action, body, token }: any) => {
+export const blockActions = async (
+  { action, body, inputs, token, env }: any,
+) => {
   console.log("approval actions handler", action.action_id, body);
+  console.log("token", token);
   if (action.action_id === "review_approval") {
     const state = JSON.parse(action.value as string);
 
     // Need to pass message ts along so we can remove the button once approval is complete
-    const messageTS = body.message.ts;
+    // const messageTS = body.message.ts;
 
-    const client = SlackAPI(token);
+    const client = SlackAPI(token, {
+      slackApiUrl: env.SLACK_API_URL,
+    });
 
-    const payload = {
-      trigger_id: body.trigger_id,
-      view: renderModal(state.inputs, { ...state, messageTS }),
+    const outputs = {
+      reviewer: body.user.id,
+      approved: true,
+      comments: "",
+      message_ts: body.message.ts,
     };
-    console.log("modal payload", payload);
 
-    const resp = await client.views.open(payload);
-    if (!resp.ok) {
-      console.log("error opening modal", resp);
+    // Remove the button from the approval message
+    const updateMsgResp = await client.chat.update({
+      channel: body.function_data.inputs.approval_channel_id,
+      ts: outputs.message_ts,
+      blocks: renderApprovalCompletedMessage(
+        body.function_data.inputs,
+        outputs,
+      ),
+    });
+    if (!updateMsgResp.ok) {
+      console.log("error updating msg", updateMsgResp);
     }
+
+    // Bailing out early and completing function for now
+    await client.functions.completeSuccess({
+      function_execution_id: body.function_data.execution_id,
+      outputs,
+    });
+    return;
+
+    // const payload = {
+    //   trigger_id: body.trigger_id,
+    //   view: renderModal(state.inputs, {
+    //     ...state,
+    //     messageTS: outputs.message_ts,
+    //   }),
+    // };
+    // console.log("modal payload", payload);
+
+    // const resp = await client.views.open(payload);
+    // if (!resp.ok) {
+    //   console.log("error opening modal", resp);
+    // }
   }
 };
 

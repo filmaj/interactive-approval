@@ -27,6 +27,37 @@ export const renderApprovalMessage = (inputs: any, state: any) => {
         text: `*Subject:* ${inputs.subject}`,
       },
     },
+    {
+      type: "divider",
+    },
+    {
+      type: "section",
+      block_id: "approve_deny_block",
+      text: {
+        type: "mrkdwn",
+        text: "Please approve or deny the request by indicating below",
+      },
+      accessory: {
+        type: "radio_buttons",
+        options: [
+          {
+            text: {
+              type: "mrkdwn",
+              text: "*Approved*",
+            },
+            value: "true",
+          },
+          {
+            text: {
+              type: "mrkdwn",
+              text: "*Denied*",
+            },
+            value: "false",
+          },
+        ],
+        action_id: "approve_deny_radios",
+      },
+    },
   ];
   return blocks;
 };
