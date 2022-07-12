@@ -7,9 +7,6 @@ export const ApprovalFunction = DefineFunction({
   source_file: "functions/approval/mod.ts",
   input_parameters: {
     properties: {
-      dtest: {
-        type: "slack#/types/date",
-      },
       requester_id: {
         type: Schema.slack.types.user_id,
         description: "Requester",
@@ -40,10 +37,6 @@ export const ApprovalFunction = DefineFunction({
         type: Schema.types.boolean,
         description: "Approved",
       },
-      comments: {
-        type: Schema.types.string,
-        description: "Comments",
-      },
       reviewer: {
         type: Schema.slack.types.user_id,
         description: "Reviewer",
@@ -53,6 +46,6 @@ export const ApprovalFunction = DefineFunction({
         description: "Request Message TS",
       },
     },
-    required: ["approved", "comments", "reviewer", "message_ts"],
+    required: ["approved", "reviewer", "message_ts"],
   },
 });

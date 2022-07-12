@@ -60,6 +60,8 @@ export const blockActions = async (
       console.log("error updating msg", updateMsgResp);
     }
 
+    console.log("completing function", outputs);
+
     await client.functions.completeSuccess({
       function_execution_id: body.function_data.execution_id,
       outputs,
