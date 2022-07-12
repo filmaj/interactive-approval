@@ -23,6 +23,8 @@ To grab the code and run this yourself should be pretty straight-forward as well
 ### LocalDev mode
 To test the app in localdev mode is a bit trickier, as you can't create the trigger for it in the CLI yet.
 
+1. Check out the deno-slack-runtime and use the branch from [this PR](https://github.com/slackapi/deno-slack-runtime/pull/19).
+2. Update the `slack.json` file's `start` hook to point to wherever you checked out the runtime to.
 1. Start up your app with `hermes run --no-cleanup --apihost=https://dev1407.slack.com`
 2. Visit https://api.dev.slack.com/methods/workflows.triggers.create/test and create a trigger - you can refer to the `triggers/link-shortcut.json` file to fill in the details. Refer to the app id you got once you started up in local dev mode for the `workflow_app_id` parameter.
 3. Drop the url you get from creating the trigger into slack, and click the `Run` button that unfurls.
