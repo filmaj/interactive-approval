@@ -114,7 +114,15 @@ export const renderApprovalViewedMessage = (viewerId: string) => {
   return blocks;
 };
 
-export const renderModal = (inputs: any) => {
+export const renderApprovalOutcomeStatusMessage = (outputs: any) => {
+  return `Request was ${
+    outputs.approved ? "approved" : "denied"
+  } by <@${outputs.reviewer}>\n${
+    outputs.denial_reason ? `>${outputs.denial_reason}` : ""
+  }`;
+};
+
+export const renderModal = (inputs: any, metadata: any) => {
   return {
     "callback_id": "approval_modal",
     title: {
@@ -151,49 +159,21 @@ export const renderModal = (inputs: any) => {
         type: "divider",
       },
       {
-        type: "section",
-        block_id: "approve_deny_block",
-        text: {
-          type: "mrkdwn",
-          text: "Please approve or deny the request by indicating below",
-        },
-        accessory: {
-          type: "radio_buttons",
-          options: [
-            {
-              text: {
-                type: "mrkdwn",
-                text: "*Approved*",
-              },
-              value: "true",
-            },
-            {
-              text: {
-                type: "mrkdwn",
-                text: "*Denied*",
-              },
-              value: "false",
-            },
-          ],
-          action_id: "approve_deny_radios",
-        },
-      },
-      {
         type: "input",
-        block_id: "comments_block",
+        block_id: "reason_block",
         optional: true,
         element: {
           type: "plain_text_input",
-          action_id: "comments_input",
+          action_id: "reason_input",
           multiline: true,
           placeholder: {
             type: "plain_text",
-            text: "Enter comments here",
+            text: "Please provide a reason for denying the request",
           },
         },
         label: {
           type: "plain_text",
-          text: "Comments",
+          text: "Reason",
         },
         hint: {
           type: "plain_text",
@@ -202,6 +182,7 @@ export const renderModal = (inputs: any) => {
       },
     ],
     notify_on_close: true,
+    private_metadata: JSON.stringify(metadata),
     type: "modal",
   };
 };
