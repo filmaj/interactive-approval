@@ -1,6 +1,7 @@
+import { BlockActionsRouter } from "deno-slack-sdk/mod.ts";
 import type { SlackFunctionHandler } from "deno-slack-sdk/types.ts";
 import { SlackAPI } from "deno-slack-api/mod.ts";
-import type { ApprovalFunction } from "./definition.ts";
+import { ApprovalFunction } from "./definition.ts";
 import {
   renderApprovalCompletedMessage,
   renderApprovalMessage,
@@ -31,12 +32,8 @@ const approval: SlackFunctionHandler<typeof ApprovalFunction.definition> =
 
 export default approval;
 
-// Raw handler w/o typing - the SDK will provide this layer and types
-export const blockActions = async (
-  { action, body, inputs, token, env }: any,
-) => {
-  // Denying requires providing a reason, collected in a modal
-  if (action.action_id === "deny_request") {
+export const blockActions = BlockActionsRouter(ApprovalFunction)
+  .addHandler("deny_request", async ({ body, inputs, token, env }) => {
     const client = SlackAPI(token, {
       slackApiUrl: env.SLACK_API_URL,
     });
@@ -52,13 +49,14 @@ export const blockActions = async (
     if (!resp.ok) {
       console.log("error opening modal", resp);
     }
-  } else if (action.action_id === "approve_request") {
+  })
+  .addHandler("approve_request", async ({ inputs, body, token, env }) => {
     const client = SlackAPI(token, {
       slackApiUrl: env.SLACK_API_URL,
     });
     const outputs = {
       reviewer: body.user.id,
-      approved: action.action_id === "approve_request",
+      approved: true,
       message_ts: body.message.ts,
     };
 
@@ -73,10 +71,10 @@ export const blockActions = async (
 
     // Remove the button from the approval message
     const updateMsgResp = await client.chat.update({
-      channel: body.function_data.inputs.approval_channel_id,
+      channel: body.function_data?.inputs.approval_channel_id ?? "",
       ts: outputs.message_ts,
       blocks: renderApprovalCompletedMessage(
-        body.function_data.inputs,
+        body.function_data?.inputs ?? {},
         outputs,
       ),
     });
@@ -85,11 +83,10 @@ export const blockActions = async (
     }
 
     await client.functions.completeSuccess({
-      function_execution_id: body.function_data.execution_id,
+      function_execution_id: body.function_data?.execution_id ?? "",
       outputs,
     });
-  }
-};
+  });
 
 export const viewSubmission = async (
   { body, view, inputs, token, env }: any,
