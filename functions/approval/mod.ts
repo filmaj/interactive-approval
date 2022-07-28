@@ -71,10 +71,10 @@ export const blockActions = BlockActionsRouter(ApprovalFunction)
 
     // Remove the button from the approval message
     const updateMsgResp = await client.chat.update({
-      channel: body.function_data?.inputs.approval_channel_id ?? "",
+      channel: inputs.approval_channel_id,
       ts: outputs.message_ts,
       blocks: renderApprovalCompletedMessage(
-        body.function_data?.inputs ?? {},
+        inputs,
         outputs,
       ),
     });
@@ -83,7 +83,7 @@ export const blockActions = BlockActionsRouter(ApprovalFunction)
     }
 
     await client.functions.completeSuccess({
-      function_execution_id: body.function_data?.execution_id ?? "",
+      function_execution_id: body.function_data.execution_id,
       outputs,
     });
   });
