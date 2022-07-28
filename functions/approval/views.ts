@@ -21,13 +21,15 @@ export const renderApprovalMessage = (inputs: any) => {
         text: `*Subject:* ${inputs.subject}`,
       },
     },
-    {
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: `*Details:* ${inputs.details}`,
-      },
-    },
+    inputs.details
+      ? {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `*Details:* ${inputs.details}`,
+        },
+      }
+      : null,
     {
       "type": "actions",
       "elements": [
@@ -51,7 +53,7 @@ export const renderApprovalMessage = (inputs: any) => {
         },
       ],
     },
-  ];
+  ].filter(Boolean);
   return blocks;
 };
 
