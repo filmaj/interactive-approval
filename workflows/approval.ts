@@ -7,9 +7,7 @@ export const ApprovalWorkflow = DefineWorkflow({
   input_parameters: {
     properties: {
       interaction: {
-        // swap over to the schema def once released
         type: Schema.slack.types.interactivity,
-        // type: "slack#/types/interactivity",
       },
       approval_channel_id: {
         type: Schema.slack.types.channel_id,
