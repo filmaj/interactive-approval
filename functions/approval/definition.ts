@@ -49,6 +49,10 @@ export const ApprovalFunction = DefineFunction({
         type: Schema.types.string,
         description: "Reason for denying request",
       },
+      remediation: {
+        type: Schema.types.string,
+        description: "What to do instead",
+      },
     },
     required: ["approved", "reviewer", "message_ts"],
   },

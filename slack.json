@@ -1,6 +1,5 @@
 {
   "hooks": {
-    "get-hooks": "deno run -q --allow-read --allow-net https://deno.land/x/deno_slack_hooks@0.0.7/mod.ts",
-    "start": "deno run -q --config=deno.jsonc --allow-read --allow-net --unsafely-ignore-certificate-errors file:///Users/brad.harris/dev/slack/deno-slack-runtime/src/local-run.ts"
+    "get-hooks": "deno run -q --allow-read --allow-net https://deno.land/x/deno_slack_hooks@0.1.0/mod.ts"
   }
 }

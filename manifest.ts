@@ -3,7 +3,7 @@ import { ApprovalWorkflow } from "./workflows/approval.ts";
 
 export default Manifest({
   name: "interactive-approval",
-  description: "Appring allthethings",
+  description: "Approving allthethings",
   icon: "assets/icon.png",
   workflows: [ApprovalWorkflow],
   outgoingDomains: [],

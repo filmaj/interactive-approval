@@ -7,7 +7,9 @@ import {
   renderApprovalMessage,
   renderApprovalOutcomeStatusMessage,
   renderApprovalViewedMessage,
-  renderModal,
+  renderDenyModalMainPage,
+  renderDenyModalCCPage,
+  renderDenyModalSurprisePage,
 } from "./views.ts";
 
 const approval: SlackFunctionHandler<typeof ApprovalFunction.definition> =
@@ -40,14 +42,44 @@ export const blockActions = BlockActionsRouter(ApprovalFunction)
 
     const payload = {
       trigger_id: body.trigger_id,
-      view: renderModal(inputs, {
+      view: renderDenyModalMainPage(inputs, {
         messageTS: body.message.ts,
       }),
     };
 
     const resp = await client.views.open(payload);
     if (!resp.ok) {
-      console.log("error opening modal", resp);
+      console.log("error opening main modal view", resp);
+    }
+  })
+  .addHandler("cc_someone", async ({ body, token, env }) => {
+    const client = SlackAPI(token, {
+      slackApiUrl: env.SLACK_API_URL,
+    });
+
+    const payload = {
+      trigger_id: body.trigger_id,
+      view: renderDenyModalCCPage(body.view.private_metadata),
+    };
+
+    const resp = await client.views.push(payload);
+    if (!resp.ok) {
+      console.log("error opening cc modal view", resp);
+    }
+  })
+  .addHandler("surprise", async ({ body, token, env }) => {
+    const client = SlackAPI(token, {
+      slackApiUrl: env.SLACK_API_URL,
+    });
+
+    const payload = {
+      trigger_id: body.trigger_id,
+      view: renderDenyModalSurprisePage(),
+    };
+
+    const resp = await client.views.push(payload);
+    if (!resp.ok) {
+      console.log("error opening surprise modal view", resp);
     }
   })
   .addHandler("approve_request", async ({ inputs, body, token, env }) => {
@@ -91,8 +123,26 @@ export const blockActions = BlockActionsRouter(ApprovalFunction)
 export const viewSubmission = async (
   { body, view, inputs, token, env }: any,
 ) => {
-  if (view.callback_id === "approval_modal") {
-    const { messageTS } = JSON.parse(view.private_metadata);
+  const client = SlackAPI(token, {
+    slackApiUrl: env.SLACK_API_URL,
+  });
+  const { messageTS, update } = JSON.parse(view.private_metadata);
+
+  if (view.callback_id === "deny_modal_cc") {
+    const userToNotify = view.state.values?.cc_block?.cc_user?.selected_user;
+    console.log(`will notify ${userToNotify} of request`);
+    const msgResp = await client.chat.postMessage({
+      channel: userToNotify,
+      text: `<@${inputs.requester_id}> just put in a request for ${inputs.subject} ${inputs.details? `(${inputs.details})` : ''}! No good very bad!`,
+    });
+    if (!msgResp.ok) {
+      console.log('Error notifying HR', msgResp.error);
+    }
+  } else if (view.callback_id === "deny_modal_surprise") {
+    return {
+      response_action: "clear",
+    };
+  } else if (view.callback_id === "deny_modal_main") {
 
     const reason = (view.state.values?.reason_block?.reason_input?.value ?? "")
       .trim();
@@ -114,10 +164,20 @@ export const viewSubmission = async (
         },
       };
     }
-
-    const client = SlackAPI(token, {
-      slackApiUrl: env.SLACK_API_URL,
-    });
+    
+    // Push a new view to ask for remediation
+    if (!update) {
+      return {
+        response_action: "update",
+        view: renderDenyModalMainPage(inputs, {
+          messageTS: JSON.parse(view.private_metadata).messageTS,
+          update: true,
+        }),
+      };
+    }
+    const remediation = (view.state.values?.remediation_block?.remediation_input?.value ?? "")
+      .trim();
+    outputs.remediation = remediation;
 
     const msgResp = await client.chat.postMessage({
       channel: inputs.approval_channel_id,
@@ -149,7 +209,7 @@ export const viewSubmission = async (
 };
 
 export const viewClosed = async ({ inputs, view, body, token, env }: any) => {
-  if (body.view.callback_id === "approval_modal") {
+  if (body.view.callback_id === "deny_modal_main") {
     const userId = body.user.id;
     const { messageTS } = JSON.parse(view.private_metadata);
 
