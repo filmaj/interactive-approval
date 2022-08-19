@@ -1,4 +1,4 @@
-import { BlockActionsRouter } from "deno-slack-sdk/mod.ts";
+import { BlockActionsRouter, ViewsRouter } from "deno-slack-sdk/mod.ts";
 import type { SlackFunctionHandler } from "deno-slack-sdk/types.ts";
 import { SlackAPI } from "deno-slack-api/mod.ts";
 import { ApprovalFunction } from "./definition.ts";
@@ -10,8 +10,13 @@ import {
   renderModal,
 } from "./views.ts";
 
+export const unhandledEvent = ({ body, inputs, token, env, team_id }: any) => {
+  console.log("unhandledEvent handler", team_id);
+};
+
 const approval: SlackFunctionHandler<typeof ApprovalFunction.definition> =
   async ({ inputs, token, env }) => {
+    console.log("approval fn running");
     const client = SlackAPI(token, {
       slackApiUrl: env.SLACK_API_URL,
     });
@@ -88,82 +93,83 @@ export const blockActions = BlockActionsRouter(ApprovalFunction)
     });
   });
 
-export const viewSubmission = async (
-  { body, view, inputs, token, env }: any,
-) => {
-  if (view.callback_id === "approval_modal") {
-    const { messageTS } = JSON.parse(view.private_metadata);
+export const { viewClosed, viewSubmission } = ViewsRouter(ApprovalFunction)
+  .addSubmissionHandler(
+    "approval_modal",
+    async ({ body, view, inputs, token, env }) => {
+      const { messageTS } = JSON.parse(view.private_metadata || "");
 
-    const reason = (view.state.values?.reason_block?.reason_input?.value ?? "")
-      .trim();
+      const reason =
+        (view.state.values?.reason_block?.reason_input?.value ?? "")
+          .trim();
 
-    const outputs = {
-      reviewer: body.user.id,
-      approved: false,
-      message_ts: messageTS,
-      denial_reason: reason,
-    };
-
-    // Need to provide comments if not approving
-    if (!outputs.denial_reason || outputs.denial_reason == "lgtm") {
-      return {
-        response_action: "errors",
-        errors: {
-          "reason_block":
-            "Please provide an adequate reason for denying the request",
-        },
+      const outputs = {
+        reviewer: body.user.id,
+        approved: false,
+        message_ts: messageTS,
+        denial_reason: reason,
       };
-    }
 
-    const client = SlackAPI(token, {
-      slackApiUrl: env.SLACK_API_URL,
-    });
+      // Need to provide comments if not approving
+      if (!outputs.denial_reason || outputs.denial_reason == "lgtm") {
+        return {
+          response_action: "errors",
+          errors: {
+            "reason_block":
+              "Please provide an adequate reason for denying the request",
+          },
+        };
+      }
 
-    const msgResp = await client.chat.postMessage({
-      channel: inputs.approval_channel_id,
-      thread_ts: messageTS,
-      text: renderApprovalOutcomeStatusMessage(outputs),
-    });
-    if (!msgResp.ok) {
-      console.log("error sending msg", msgResp);
-    }
+      const client = SlackAPI(token, {
+        slackApiUrl: env.SLACK_API_URL,
+      });
 
-    // Update the original approval request message
-    const updateMsgResp = await client.chat.update({
-      channel: inputs.approval_channel_id,
-      ts: messageTS,
-      blocks: renderApprovalCompletedMessage(inputs, outputs),
-    });
-    if (!updateMsgResp.ok) {
-      console.log("error updating msg", updateMsgResp);
-    }
+      const msgResp = await client.chat.postMessage({
+        channel: inputs.approval_channel_id,
+        thread_ts: messageTS,
+        text: renderApprovalOutcomeStatusMessage(outputs),
+      });
+      if (!msgResp.ok) {
+        console.log("error sending msg", msgResp);
+      }
 
-    const completeResp = await client.functions.completeSuccess({
-      function_execution_id: body.function_data.execution_id,
-      outputs,
-    });
-    if (!completeResp.ok) {
-      console.log("error completing fn", completeResp);
-    }
-  }
-};
+      // Update the original approval request message
+      const updateMsgResp = await client.chat.update({
+        channel: inputs.approval_channel_id,
+        ts: messageTS,
+        blocks: renderApprovalCompletedMessage(inputs, outputs),
+      });
+      if (!updateMsgResp.ok) {
+        console.log("error updating msg", updateMsgResp);
+      }
 
-export const viewClosed = async ({ inputs, view, body, token, env }: any) => {
-  if (body.view.callback_id === "approval_modal") {
-    const userId = body.user.id;
-    const { messageTS } = JSON.parse(view.private_metadata);
+      const completeResp = await client.functions.completeSuccess({
+        function_execution_id: body.function_data.execution_id,
+        outputs,
+      });
+      if (!completeResp.ok) {
+        console.log("error completing fn", completeResp);
+      }
+    },
+  )
+  .addClosedHandler(
+    "approval_modal",
+    async ({ body, view, token, env, inputs }) => {
+      const userId = body.user.id;
+      const { messageTS } = JSON.parse(view.private_metadata || "");
 
-    const client = SlackAPI(token, {
-      slackApiUrl: env.SLACK_API_URL,
-    });
+      const client = SlackAPI(token, {
+        slackApiUrl: env.SLACK_API_URL,
+      });
 
-    const msgResp = await client.chat.postMessage({
-      channel: inputs.approval_channel_id,
-      blocks: renderApprovalViewedMessage(userId),
-      thread_ts: messageTS,
-    });
-    if (!msgResp.ok) {
-      console.log("error posting approval viewed message", msgResp);
-    }
-  }
-};
+      const msgResp = await client.chat.postMessage({
+        channel: inputs.approval_channel_id,
+        blocks: renderApprovalViewedMessage(userId),
+        thread_ts: messageTS,
+      });
+      if (!msgResp.ok) {
+        console.log("error posting approval viewed message", msgResp);
+      }
+    },
+  );

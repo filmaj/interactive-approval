@@ -19,7 +19,7 @@ export const ApprovalWorkflow = DefineWorkflow({
 });
 
 const step1 = ApprovalWorkflow.addStep(
-  "slack#/functions/send_form",
+  Schema.slack.functions.OpenForm,
   {
     title: "Approval Request",
     submit_label: "Request",
