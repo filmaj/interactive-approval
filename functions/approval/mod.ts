@@ -54,7 +54,7 @@ export const blockActions = BlockActionsRouter(ApprovalFunction)
     });
 
     const payload = {
-      trigger_id: body.trigger_id,
+      trigger_id: body.interactivity.interactivity_pointer,
       view: renderDenyModalMainPage(inputs, {
         messageTS: body.message.ts,
       }),
