@@ -18,38 +18,38 @@ export const ApprovalWorkflow = DefineWorkflow({
   },
 });
 
-const step1 = ApprovalWorkflow.addStep(
-  Schema.slack.functions.OpenForm,
-  {
-    title: "Approval Request",
-    submit_label: "Request",
-    description: "Please describe your request",
-    interactivity: ApprovalWorkflow.inputs.interaction,
-    fields: {
-      required: ["subject"],
-      elements: [
-        {
-          name: "subject",
-          title: "Request Subject",
-          type: Schema.types.string,
-        },
-        {
-          name: "details",
-          title: "Additional Details",
-          type: Schema.types.string,
-          description: "Please add any additional details",
-          long: true,
-        },
-      ],
-    },
-  },
-);
+//const step1 = ApprovalWorkflow.addStep(
+  //Schema.slack.functions.OpenForm,
+  //{
+    //title: "Approval Request",
+    //submit_label: "Request",
+    //description: "Please describe your request",
+    //interactivity: ApprovalWorkflow.inputs.interaction,
+    //fields: {
+      //required: ["subject"],
+      //elements: [
+        //{
+          //name: "subject",
+          //title: "Request Subject",
+          //type: Schema.types.string,
+        //},
+        //{
+          //name: "details",
+          //title: "Additional Details",
+          //type: Schema.types.string,
+          //description: "Please add any additional details",
+          //long: true,
+        //},
+      //],
+    //},
+  //},
+//);
 
 const step2 = ApprovalWorkflow.addStep(ApprovalFunction, {
   approval_channel_id: ApprovalWorkflow.inputs.approval_channel_id,
   requester_id: ApprovalWorkflow.inputs.interaction.interactor.id,
-  subject: step1.outputs.fields.subject,
-  details: step1.outputs.fields.details,
+  subject: 'test',// step1.outputs.fields.subject,
+  details: 'test',//step1.outputs.fields.details,
 });
 
 // This is just really here to add some checks on using the outputs of the previous step

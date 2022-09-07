@@ -11,10 +11,11 @@ import {
   renderDenyModalMainPage,
   renderDenyModalSurprisePage,
 } from "./views.ts";
+import { MyEvent } from "../../manifest.ts";
 
 const approval: SlackFunctionHandler<typeof ApprovalFunction.definition> =
   async ({ inputs, token, env, event }) => {
-    console.log("Top level function event", JSON.stringify(event, null, 2));
+    // console.log("Top level function event", JSON.stringify(event, null, 2));
     const client = SlackAPI(token, {
       slackApiUrl: env.SLACK_API_URL,
     });
@@ -22,6 +23,12 @@ const approval: SlackFunctionHandler<typeof ApprovalFunction.definition> =
     const resp = await client.chat.postMessage({
       channel: inputs.approval_channel_id,
       blocks: renderApprovalMessage(inputs),
+      metadata: {
+        event_type: MyEvent,
+        event_payload: {
+          aBoolean: true
+        },
+      }
     });
 
     if (!resp.ok) {
@@ -35,9 +42,13 @@ const approval: SlackFunctionHandler<typeof ApprovalFunction.definition> =
 
 export default approval;
 
+export const unhandledEvent = (args: any) => {
+  console.log("This event was not handled", args);
+};
+
 export const blockActions = BlockActionsRouter(ApprovalFunction)
   .addHandler("deny_request", async ({ body, inputs, token, env }) => {
-    console.log("Hello from deny button action handler");
+    console.log("Hello from deny button action handler", JSON.stringify(body, null, 2));
     const client = SlackAPI(token, {
       slackApiUrl: env.SLACK_API_URL,
     });
@@ -128,12 +139,12 @@ export const blockActions = BlockActionsRouter(ApprovalFunction)
 export const { viewSubmission, viewClosed } = ViewsRouter(ApprovalFunction)
   .addSubmissionHandler(
     "deny_modal_cc",
-    async ({ token, env, view, inputs }) => {
+    async ({ body, token, env, view, inputs }) => {
       console.log("Hello from CC view submission handler");
       const client = SlackAPI(token, {
         slackApiUrl: env.SLACK_API_URL,
       });
-      const { messageTS, update } = JSON.parse(view.private_metadata);
+      const { messageTS, update } = JSON.parse(view.private_metadata || "{}");
       const userToNotify = view.state.values?.cc_block?.cc_user?.selected_user;
       console.log(`will notify ${userToNotify} of request`);
       const msgResp = await client.chat.postMessage({
@@ -157,11 +168,11 @@ export const { viewSubmission, viewClosed } = ViewsRouter(ApprovalFunction)
   .addSubmissionHandler(
     "deny_modal_main",
     async ({ body, token, env, view, inputs }) => {
-      console.log("Hello from main view submission handler");
+      console.log("Hello from main view submission handler", JSON.stringify(body, null, 2));
       const client = SlackAPI(token, {
         slackApiUrl: env.SLACK_API_URL,
       });
-      const { messageTS, update } = JSON.parse(view.private_metadata);
+      const { messageTS, update } = JSON.parse(view.private_metadata || "{}");
 
       const reason =
         (view.state.values?.reason_block?.reason_input?.value ?? "")
@@ -172,6 +183,7 @@ export const { viewSubmission, viewClosed } = ViewsRouter(ApprovalFunction)
         approved: false,
         message_ts: messageTS,
         denial_reason: reason,
+        remediation: "",
       };
 
       // Need to provide comments if not approving
@@ -190,7 +202,7 @@ export const { viewSubmission, viewClosed } = ViewsRouter(ApprovalFunction)
         return {
           response_action: "update",
           view: renderDenyModalMainPage(inputs, {
-            messageTS: JSON.parse(view.private_metadata).messageTS,
+            messageTS: JSON.parse(view.private_metadata || "{}").messageTS,
             update: true,
           }),
         };
@@ -233,7 +245,7 @@ export const { viewSubmission, viewClosed } = ViewsRouter(ApprovalFunction)
       console.log("Hello from main view closed handler");
       if (body.view.callback_id === "deny_modal_main") {
         const userId = body.user.id;
-        const { messageTS } = JSON.parse(view.private_metadata);
+        const { messageTS } = JSON.parse(view.private_metadata || "{}");
 
         const client = SlackAPI(token, {
           slackApiUrl: env.SLACK_API_URL,
