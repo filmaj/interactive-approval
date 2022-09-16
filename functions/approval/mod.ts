@@ -1,7 +1,7 @@
 import { BlockActionsRouter, ViewsRouter } from "deno-slack-sdk/mod.ts";
-import type { SlackFunctionHandler } from "deno-slack-sdk/types.ts";
+import { SlackFunction } from "deno-slack-sdk/mod.ts";
 import { SlackAPI } from "deno-slack-api/mod.ts";
-import { ApprovalFunction } from "./definition.ts";
+import { ApprovalFunction } from "./ddefinition.ts";
 import {
   renderApprovalCompletedMessage,
   renderApprovalMessage,
@@ -13,9 +13,9 @@ import {
 } from "./views.ts";
 import { MyEvent } from "../../manifest.ts";
 
-const approval: SlackFunctionHandler<typeof ApprovalFunction.definition> =
+export default SlackFunction(ApprovalFunction,
   async ({ inputs, token, env, event }) => {
-    // console.log("Top level function event", JSON.stringify(event, null, 2));
+    console.log("Top level function event", JSON.stringify(event, null, 2));
     const client = SlackAPI(token, {
       slackApiUrl: env.SLACK_API_URL,
     });
@@ -38,16 +38,10 @@ const approval: SlackFunctionHandler<typeof ApprovalFunction.definition> =
     return {
       completed: false,
     };
-  };
-
-export default approval;
-
-export const unhandledEvent = (args: any) => {
+  }
+).addUnhandledEventHandler((args: any) => {
   console.log("This event was not handled", args);
-};
-
-export const blockActions = BlockActionsRouter(ApprovalFunction)
-  .addHandler("deny_request", async ({ body, inputs, token, env }) => {
+}).addBlockActionsHandler("deny_request", async ({ body, inputs, token, env }) => {
     console.log("Hello from deny button action handler", JSON.stringify(body, null, 2));
     const client = SlackAPI(token, {
       slackApiUrl: env.SLACK_API_URL,
@@ -65,14 +59,14 @@ export const blockActions = BlockActionsRouter(ApprovalFunction)
       console.log("error opening main modal view", resp);
     }
   })
-  .addHandler("cc_someone", async ({ body, token, env }) => {
-    console.log("Hello from CC button action handler");
+  .addBlockActionsHandler("cc_someone", async ({ body, token, env }) => {
+    console.log("Hello from CC button action handler", body);
     const client = SlackAPI(token, {
       slackApiUrl: env.SLACK_API_URL,
     });
 
     const payload = {
-      trigger_id: body.trigger_id,
+      trigger_id: body.interactivity.interactivity_pointer,
       view: renderDenyModalCCPage(body.view.private_metadata),
     };
 
@@ -81,14 +75,14 @@ export const blockActions = BlockActionsRouter(ApprovalFunction)
       console.log("error opening cc modal view", resp);
     }
   })
-  .addHandler("surprise", async ({ body, token, env }) => {
+  .addBlockActionsHandler("surprise", async ({ body, token, env }) => {
     console.log("Hello from surprise button action handler");
     const client = SlackAPI(token, {
       slackApiUrl: env.SLACK_API_URL,
     });
 
     const payload = {
-      trigger_id: body.trigger_id,
+      trigger_id: body.interactivity.interactivity_pointer,
       view: renderDenyModalSurprisePage(),
     };
 
@@ -97,8 +91,8 @@ export const blockActions = BlockActionsRouter(ApprovalFunction)
       console.log("error opening surprise modal view", resp);
     }
   })
-  .addHandler("approve_request", async ({ inputs, body, token, env }) => {
-    console.log("Hello from approve button action handler");
+  .addBlockActionsHandler("approve_request", async ({ inputs, body, token, env }) => {
+    console.log("Hello from approve button action handler", body);
     const client = SlackAPI(token, {
       slackApiUrl: env.SLACK_API_URL,
     });
@@ -134,10 +128,7 @@ export const blockActions = BlockActionsRouter(ApprovalFunction)
       function_execution_id: body.function_data.execution_id,
       outputs,
     });
-  });
-
-export const { viewSubmission, viewClosed } = ViewsRouter(ApprovalFunction)
-  .addSubmissionHandler(
+  }).addViewSubmissionHandler(
     "deny_modal_cc",
     async ({ body, token, env, view, inputs }) => {
       console.log("Hello from CC view submission handler");
@@ -158,14 +149,12 @@ export const { viewSubmission, viewClosed } = ViewsRouter(ApprovalFunction)
         console.log("Error notifying HR", msgResp.error);
       }
     },
-  )
-  .addSubmissionHandler("deny_modal_surprise", () => {
+  ).addViewSubmissionHandler("deny_modal_surprise", () => {
     console.log("Hello from surprise view submission handler");
     return {
       response_action: "clear",
     };
-  })
-  .addSubmissionHandler(
+  }).addViewSubmissionHandler(
     "deny_modal_main",
     async ({ body, token, env, view, inputs }) => {
       console.log("Hello from main view submission handler", JSON.stringify(body, null, 2));
@@ -239,10 +228,10 @@ export const { viewSubmission, viewClosed } = ViewsRouter(ApprovalFunction)
         console.log("error completing fn", completeResp);
       }
     },
-  ).addClosedHandler(
+  ).addViewClosedHandler(
     "deny_modal_main",
     async ({ inputs, view, body, token, env }) => {
-      console.log("Hello from main view closed handler");
+      console.log("Hello from main view closed handler", body);
       if (body.view.callback_id === "deny_modal_main") {
         const userId = body.user.id;
         const { messageTS } = JSON.parse(view.private_metadata || "{}");
