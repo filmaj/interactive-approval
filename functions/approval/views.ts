@@ -187,6 +187,23 @@ export const renderDenyModalMainPage = (inputs: any, metadata: any) => {
           text: "These comments will be shared with the requestor",
         },
       },
+      {
+        type: "input",
+        block_id: "ext_select_block",
+        optional: true,
+        element: {
+          type: "external_select",
+          action_id: "ext_select_input",
+          placeholder: {
+            type: "plain_text",
+            text: "Inspire",
+          },
+        },
+        label: {
+          type: "plain_text",
+          text: "Inspirational Quote",
+        },
+      },
       metadata.update ? {
         type: "input",
         block_id: "remediation_block",

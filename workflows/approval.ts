@@ -1,7 +1,7 @@
 import { DefineWorkflow, Schema } from "deno-slack-sdk/mod.ts";
 import { ApprovalFunction } from "../functions/approval/definition.ts";
 
-export const ApprovalWorkflow = DefineWorkflow({
+const ApprovalWorkflow = DefineWorkflow({
   callback_id: "approval_wf",
   title: "Approval Workflow",
   input_parameters: {
@@ -59,3 +59,5 @@ ApprovalWorkflow.addStep("slack#/functions/send_message", {
     `<@${ApprovalWorkflow.inputs.interaction.interactor.id}>, your request has been completed.`,
   thread_ts: step2.outputs.message_ts,
 });
+
+export default ApprovalWorkflow;

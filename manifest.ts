@@ -1,5 +1,5 @@
 import { Manifest, DefineEvent, Schema, DefineType } from "deno-slack-sdk/mod.ts";
-import { ApprovalWorkflow } from "./workflows/approval.ts";
+import ApprovalWorkflow from "./workflows/approval.ts";
 
 const fancyAssBoolean = DefineType({
   name: "fancyAssBoolean",
@@ -20,7 +20,7 @@ export default Manifest({
   description: "Approving allthethings",
   icon: "assets/icon.png",
   workflows: [ApprovalWorkflow],
-  outgoingDomains: [],
-  botScopes: ["commands", "chat:write", "chat:write.public", "metadata.message:read"],
+  outgoingDomains: ["motivational-quote-api.herokuapp.com"],
+  botScopes: ["commands", "chat:write", "chat:write.public", "metadata.message:read", "channels:history"],
   events: [MyEvent],
 });
