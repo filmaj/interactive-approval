@@ -121,19 +121,24 @@ export const renderApprovalOutcomeStatusMessage = (outputs: any) => {
     outputs.approved ? "approved" : "denied"
   } by <@${outputs.reviewer}>\n${
     outputs.denial_reason ? `>${outputs.denial_reason}` : ""
+  }\n${
+    outputs.remediation ? `>${outputs.remediation}` : ""
   }`;
 };
 
-export const renderModal = (inputs: any, metadata: any) => {
+/**
+ * @description Renders a modal view with a form the denier can fill out with denial reasons
+ */
+export const renderDenyModalMainPage = (inputs: any, metadata: any) => {
   return {
-    "callback_id": "approval_modal",
+    "callback_id": "deny_modal_main",
     title: {
       type: "plain_text",
-      text: "Review Approval Request",
+      text: "Deny Request",
     },
     submit: {
       type: "plain_text",
-      text: "Submit",
+      text: "Next",
     },
     blocks: [
       {
@@ -182,9 +187,136 @@ export const renderModal = (inputs: any, metadata: any) => {
           text: "These comments will be shared with the requestor",
         },
       },
+      {
+        type: "input",
+        block_id: "ext_select_block",
+        optional: true,
+        element: {
+          type: "external_select",
+          action_id: "ext_select_input",
+          placeholder: {
+            type: "plain_text",
+            text: "Inspire",
+          },
+        },
+        label: {
+          type: "plain_text",
+          text: "Inspirational Quote",
+        },
+      },
+      metadata.update ? {
+        type: "input",
+        block_id: "remediation_block",
+        optional: true,
+        element: {
+          type: "plain_text_input",
+          action_id: "remediation_input",
+          multiline: true,
+          placeholder: {
+            type: "plain_text",
+            text: "Optionally provide a suggested remediation",
+          },
+        },
+        label: {
+          type: "plain_text",
+          text: "Remediation",
+        },
+        hint: {
+          type: "plain_text",
+          text: "Whoops! Sorry, forgot about this field!",
+        },
+      } : {
+        type: "divider",
+      },
+      {
+        "type": "actions",
+        "elements": [
+          {
+            type: "button",
+            text: {
+              type: "plain_text",
+              text: "CC Someone on Response?",
+            },
+            action_id: "cc_someone",
+            style: "danger",
+          },
+          {
+            type: "button",
+            text: {
+              type: "plain_text",
+              text: "Surprise!",
+            },
+            action_id: "surprise",
+            style: "danger",
+          },
+        ],
+      },
     ],
     notify_on_close: true,
     private_metadata: JSON.stringify(metadata),
     type: "modal",
+  };
+};
+
+export const renderDenyModalCCPage = (metadata: any) => {
+  return {
+    "callback_id": "deny_modal_cc",
+    title: {
+      type: "plain_text",
+      text: "CC Someone",
+    },
+    submit: {
+      type: "plain_text",
+      text: "Notify",
+    },
+    blocks: [
+      {
+        type: "input",
+        block_id: "cc_block",
+        element: {
+          type: "users_select",
+          action_id: "cc_user",
+          placeholder: {
+            type: "plain_text",
+            text: "Someone",
+          },
+        },
+        label: {
+          type: "plain_text",
+          text: "Whom should we forward this terrible request to?",
+        },
+        hint: {
+          type: "plain_text",
+          text: "You probably want to notify HR",
+        },
+      },
+    ],
+    private_metadata: metadata,
+    type: "modal",
+  };
+};
+
+export const renderDenyModalSurprisePage = () => {
+  return {
+    "callback_id": "deny_modal_surprise",
+    title: {
+      type: "plain_text",
+      text: "Surprise!",
+    },
+    submit: {
+      type: "plain_text",
+      text: "Clear",
+    },
+    blocks: [
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `This section does nothing but clear the view stack.`,
+        },
+      },
+    ],
+    type: "modal",
+    private_metadata: "{}",
   };
 };
