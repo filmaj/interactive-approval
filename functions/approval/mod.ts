@@ -188,6 +188,7 @@ export default SlackFunction(ApprovalFunction,
             "Please provide an adequate reason for denying the request",
         },
       };
+    }
 
     // Push a new view to ask for remediation
     if (!update) {
@@ -204,18 +205,14 @@ export default SlackFunction(ApprovalFunction,
         .trim();
     outputs.remediation = remediation;
 
-      const client = SlackAPI(token, {
-        slackApiUrl: env.SLACK_API_URL,
-      });
-
-      const msgResp = await client.chat.postMessage({
-        channel: inputs.approval_channel_id,
-        thread_ts: messageTS,
-        text: renderApprovalOutcomeStatusMessage(outputs),
-      });
-      if (!msgResp.ok) {
-        console.log("error sending msg", msgResp);
-      }
+    const msgResp = await client.chat.postMessage({
+      channel: inputs.approval_channel_id,
+      thread_ts: messageTS,
+      text: renderApprovalOutcomeStatusMessage(outputs),
+    });
+    if (!msgResp.ok) {
+      console.log("error sending msg", msgResp);
+    }
 
     const completeResp = await client.functions.completeSuccess({
       function_execution_id: body.function_data.execution_id,
@@ -248,7 +245,7 @@ export default SlackFunction(ApprovalFunction,
       }
     }
   },
-).addBlockSuggestionHandler(
+)/*.addBlockSuggestionHandler(
   "ext_select_input",
   async (args) => {
     args.
@@ -263,3 +260,4 @@ export default SlackFunction(ApprovalFunction,
     return opts;
   }
 );
+*/
