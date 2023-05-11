@@ -12,7 +12,6 @@ import {
 } from "./views.ts";
 import { MyEvent } from "../../manifest.ts";
 
-
 export default SlackFunction(ApprovalFunction,
   async ({ inputs, token, env, event, team_id, enterprise_id }) => {
     console.log("Top level function event", JSON.stringify(event, null, 2));
@@ -213,6 +212,15 @@ export default SlackFunction(ApprovalFunction,
     if (!msgResp.ok) {
       console.log("error sending msg", msgResp);
     }
+    // Remove the button from the approval message
+    const updateMsgResp = await client.chat.update({
+      channel: inputs.approval_channel_id,
+      ts: outputs.message_ts,
+      blocks: renderApprovalCompletedMessage(
+        inputs,
+        outputs,
+      ),
+    });
 
     const completeResp = await client.functions.completeSuccess({
       function_execution_id: body.function_data.execution_id,
