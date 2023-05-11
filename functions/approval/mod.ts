@@ -1,5 +1,4 @@
 import { SlackFunction } from "deno-slack-sdk/mod.ts";
-import { SlackAPI } from "deno-slack-api/mod.ts";
 import { ApprovalFunction } from "./definition.ts";
 import {
   renderApprovalCompletedMessage,
@@ -13,13 +12,9 @@ import {
 import { MyEvent } from "../../manifest.ts";
 
 export default SlackFunction(ApprovalFunction,
-  async ({ inputs, token, env, event, team_id, enterprise_id }) => {
+  async ({ inputs, client, event, team_id, enterprise_id }) => {
     console.log("Top level function event", JSON.stringify(event, null, 2));
     console.log(team_id, enterprise_id);
-    const client = SlackAPI(token, {
-      slackApiUrl: env.SLACK_API_URL,
-    });
-
     const resp = await client.chat.postMessage({
       channel: inputs.approval_channel_id,
       blocks: renderApprovalMessage(inputs),
@@ -41,12 +36,9 @@ export default SlackFunction(ApprovalFunction,
   }
 ).addUnhandledEventHandler((args) => {
   console.log("This event was not handled", args);
-}).addBlockActionsHandler("deny_request", async ({ body, action, inputs, token, enterprise_id, team_id, env }) => {
+}).addBlockActionsHandler("deny_request", async ({ body, client, inputs, enterprise_id, team_id }) => {
   console.log("Hello from deny button action handler", JSON.stringify(body, null, 2));
   console.log(team_id, enterprise_id);
-  const client = SlackAPI(token, {
-    slackApiUrl: env.SLACK_API_URL,
-  });
 
   const payload = {
     interactivity_pointer: body.interactivity.interactivity_pointer,
@@ -60,11 +52,8 @@ export default SlackFunction(ApprovalFunction,
     console.log("error opening main modal view", resp);
   }
 })
-.addBlockActionsHandler("cc_someone", async ({ body, token, env }) => {
+.addBlockActionsHandler("cc_someone", async ({ body, client }) => {
   console.log("Hello from CC button action handler", body);
-  const client = SlackAPI(token, {
-    slackApiUrl: env.SLACK_API_URL,
-  });
 
   const payload = {
     trigger_id: body.interactivity.interactivity_pointer,
@@ -76,11 +65,8 @@ export default SlackFunction(ApprovalFunction,
     console.log("error opening cc modal view", resp);
   }
 })
-.addBlockActionsHandler("surprise", async ({ body, token, env }) => {
+.addBlockActionsHandler("surprise", async ({ body, client }) => {
   console.log("Hello from surprise button action handler");
-  const client = SlackAPI(token, {
-    slackApiUrl: env.SLACK_API_URL,
-  });
 
   const payload = {
     trigger_id: body.interactivity.interactivity_pointer,
@@ -92,12 +78,9 @@ export default SlackFunction(ApprovalFunction,
     console.log("error opening surprise modal view", resp);
   }
 })
-.addBlockActionsHandler("approve_request", async ({ inputs, action, body, token, env, team_id, enterprise_id }) => {
+.addBlockActionsHandler("approve_request", async ({ inputs, action, body, client, team_id, enterprise_id }) => {
   console.log("Hello from approve button action handler", action);
   console.log(team_id, enterprise_id);
-  const client = SlackAPI(token, {
-    slackApiUrl: env.SLACK_API_URL,
-  });
   const outputs = {
     reviewer: body.user.id,
     approved: true,
@@ -132,11 +115,8 @@ export default SlackFunction(ApprovalFunction,
   });
 }).addViewSubmissionHandler(
   "deny_modal_cc",
-  async ({ body, token, env, view, inputs }) => {
+  async ({ client, view, inputs }) => {
     console.log("Hello from CC view submission handler");
-    const client = SlackAPI(token, {
-      slackApiUrl: env.SLACK_API_URL,
-    });
     const { messageTS, update } = JSON.parse(view.private_metadata || "{}");
     const userToNotify = view.state.values?.cc_block?.cc_user?.selected_user;
     console.log(`will notify ${userToNotify} of request`);
@@ -158,12 +138,9 @@ export default SlackFunction(ApprovalFunction,
   };
 }).addViewSubmissionHandler(
   "deny_modal_main",
-  async ({ body, token, env, view, inputs, team_id, enterprise_id }) => {
+  async ({ body, client, view, inputs, team_id, enterprise_id }) => {
     console.log("Hello from main view submission handler", JSON.stringify(body, null, 2));
     console.log(team_id, enterprise_id);
-    const client = SlackAPI(token, {
-      slackApiUrl: env.SLACK_API_URL,
-    });
     const { messageTS, update } = JSON.parse(view.private_metadata || "{}");
 
     const reason =
@@ -232,16 +209,12 @@ export default SlackFunction(ApprovalFunction,
   },
 ).addViewClosedHandler(
   "deny_modal_main",
-  async ({ inputs, view, body, token, env, team_id, enterprise_id }) => {
+  async ({ inputs, view, body, client, team_id, enterprise_id }) => {
     console.log("Hello from main view closed handler", body);
     console.log(team_id, enterprise_id);
     if (body.view.callback_id === "deny_modal_main") {
       const userId = body.user.id;
       const { messageTS } = JSON.parse(view.private_metadata || "{}");
-
-      const client = SlackAPI(token, {
-        slackApiUrl: env.SLACK_API_URL,
-      });
 
       const msgResp = await client.chat.postMessage({
         channel: inputs.approval_channel_id,
