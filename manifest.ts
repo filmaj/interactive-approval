@@ -20,7 +20,7 @@ export default Manifest({
   description: "Approving allthethings",
   icon: "assets/icon.png",
   workflows: [ApprovalWorkflow],
-  outgoingDomains: ["motivational-quote-api.herokuapp.com"],
+  outgoingDomains: ["random-data-api.com"],
   botScopes: ["commands", "chat:write", "chat:write.public", "metadata.message:read", "channels:history"],
   events: [MyEvent],
 });

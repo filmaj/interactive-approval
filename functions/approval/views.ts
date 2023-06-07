@@ -196,12 +196,12 @@ export const renderDenyModalMainPage = (inputs: any, metadata: any) => {
           action_id: "ext_select_input",
           placeholder: {
             type: "plain_text",
-            text: "Inspire",
+            text: "External Beer",
           },
         },
         label: {
           type: "plain_text",
-          text: "Inspirational Quote",
+          text: "Beer!",
         },
       },
       metadata.update ? {

@@ -226,19 +226,18 @@ export default SlackFunction(ApprovalFunction,
       }
     }
   },
-)/*.addBlockSuggestionHandler(
+).addBlockSuggestionHandler(
   "ext_select_input",
   async (args) => {
-    args.
     console.log('BLOCK SUGGESTION HANDLER, ', JSON.stringify(args.body, null, 2));
-    const apiResp = await fetch("https://motivational-quote-api.herokuapp.com/quotes");
-    const quotes = await apiResp.json();
-    console.log('Returning', quotes.length, 'quotes');
+    const apiResp = await fetch("https://random-data-api.com/api/v2/beers?response_type=json&size=10");
+    const beers = await apiResp.json();
+    console.log('Returning', beers.length, 'beers');
     const opts = {
-      "options": quotes.map((q) => ({value: `${q.id}`, text: {type:"plain_text", text: q.quote.slice(0,70)}}))
+      // deno-lint-ignore no-explicit-any
+      "options": beers.map((b: any) => ({value: `${b.id}`, text: {type:"plain_text", text: `${b.brand} ${b.name}`}}))
     };
     console.log(JSON.stringify(opts, null, 2));
     return opts;
   }
 );
-*/
