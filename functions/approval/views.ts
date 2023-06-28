@@ -196,12 +196,12 @@ export const renderDenyModalMainPage = (inputs: any, metadata: any) => {
           action_id: "ext_select_input",
           placeholder: {
             type: "plain_text",
-            text: "External Beer",
+            text: "Search for an account",
           },
         },
         label: {
           type: "plain_text",
-          text: "Beer!",
+          text: "Block Suggestions reading a bundled 2MB CSV File",
         },
       },
       metadata.update ? {

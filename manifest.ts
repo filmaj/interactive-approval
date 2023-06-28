@@ -18,9 +18,9 @@ export const MyEvent = DefineEvent({
 export default Manifest({
   name: "interactive-approval",
   description: "Approving allthethings",
-  icon: "assets/icon.png",
+  icon: "icon.png",
   workflows: [ApprovalWorkflow],
-  outgoingDomains: ["random-data-api.com"],
+  outgoingDomains: ["raw.githubusercontent.com"],
   botScopes: ["commands", "chat:write", "chat:write.public", "metadata.message:read", "channels:history"],
   events: [MyEvent],
 });

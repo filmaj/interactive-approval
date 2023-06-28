@@ -9,7 +9,11 @@ import {
   renderDenyModalMainPage,
   renderDenyModalSurprisePage,
 } from "./views.ts";
+import { readCSVObjects } from "https://deno.land/x/csv@v0.8.0/mod.ts";
+
 import { MyEvent } from "../../manifest.ts";
+// deno-lint-ignore no-explicit-any
+const accountCache: any[] = [];
 
 export default SlackFunction(ApprovalFunction,
   async ({ inputs, client, event, team_id, enterprise_id }) => {
@@ -141,6 +145,7 @@ export default SlackFunction(ApprovalFunction,
   async ({ body, client, view, inputs, team_id, enterprise_id }) => {
     console.log("Hello from main view submission handler", JSON.stringify(body, null, 2));
     console.log(team_id, enterprise_id);
+    console.log('view state values', view.state.values);
     const { messageTS, update } = JSON.parse(view.private_metadata || "{}");
 
     const reason =
@@ -228,16 +233,40 @@ export default SlackFunction(ApprovalFunction,
   },
 ).addBlockSuggestionHandler(
   "ext_select_input",
-  async (args) => {
-    console.log('BLOCK SUGGESTION HANDLER, ', JSON.stringify(args.body, null, 2));
-    const apiResp = await fetch("https://random-data-api.com/api/v2/beers?response_type=json&size=10");
-    const beers = await apiResp.json();
-    console.log('Returning', beers.length, 'beers');
-    const opts = {
-      // deno-lint-ignore no-explicit-any
-      "options": beers.map((b: any) => ({value: `${b.id}`, text: {type:"plain_text", text: `${b.brand} ${b.name}`}}))
+  async ({ body }) => {
+    // console.log(body);
+    const userInput = body.value;
+    let st = new Date();
+    let et = new Date();
+    if (accountCache.length === 0) {
+      // TODO: at runtime it won't be clear where static files exists. would need to abstract this to handle different locations in local run vs. deployed
+      const localRunPathPrefix = './';
+      const deployedPathPrefix = '/var/task/';
+      const figureOutPath = (projectPath: string): string => {
+        // Little hack to workaround the limitations on ROSI. Lambda's default working directory is usually something like /var/task
+        if (Deno.cwd().includes("task")) return `${deployedPathPrefix}/${projectPath}`;
+        return `${localRunPathPrefix}/${projectPath}`;
+      };
+      const f = await Deno.open(figureOutPath('assets/accounts.csv'))
+      for await (const obj of readCSVObjects(f)) { accountCache.push(obj) }
+      et = new Date();
+      console.log(`Loaded ${accountCache.length} accounts in ${et.valueOf() - st.valueOf()}ms`);
+    }
+    st = new Date();
+    const options = accountCache.filter((account) => {
+      if (account.account_name.toLowerCase().includes(userInput.toLowerCase())) return true;
+      return false
+    // TODO: had to return only 10 options at a time, otherwise local run pooped out
+    }).slice(0, 10).map((account) => ({
+      value: account.account_id,
+      text: {type: "plain_text", text: account.account_name }
+    }));
+    et = new Date();
+    console.log(`Filtered ${accountCache.length} accounts to ${options.length} options in ${et.valueOf() - st.valueOf()}ms`);
+    console.log('Sneak peek of options:', options.slice(0,3));
+    return {
+      // TODO: this casting is fkn annoying
+      options: options as {value: string, text: { type:"plain_text", text: string }}[]
     };
-    console.log(JSON.stringify(opts, null, 2));
-    return opts;
   }
 );
