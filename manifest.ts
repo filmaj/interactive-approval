@@ -16,7 +16,7 @@ export const MyEvent = DefineEvent({
 });
 
 export default Manifest({
-  name: "interactive-approval",
+  name: "interactive-disapproval",
   description: "Approving allthethings",
   icon: "icon.png",
   workflows: [ApprovalWorkflow],

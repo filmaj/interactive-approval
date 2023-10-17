@@ -1,5 +1,4 @@
 import { DefineFunction, Schema } from "deno-slack-sdk/mod.ts";
-
 export const ApprovalFunction = DefineFunction({
   callback_id: "review_approval",
   title: "Approval",

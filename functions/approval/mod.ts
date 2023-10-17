@@ -50,6 +50,7 @@ export default SlackFunction(ApprovalFunction,
       messageTS: body.message?.ts,
     }),
   };
+  console.log(JSON.stringify(payload, null, 2));
 
   const resp = await client.views.open(payload);
   if (!resp.ok) {
@@ -152,6 +153,8 @@ export default SlackFunction(ApprovalFunction,
       (view.state.values?.reason_block?.reason_input?.value ?? "")
         .trim();
 
+    console.log('reason retrieved:', reason);
+
     const outputs = {
       reviewer: body.user.id,
       approved: false,
@@ -234,7 +237,7 @@ export default SlackFunction(ApprovalFunction,
 ).addBlockSuggestionHandler(
   "ext_select_input",
   async ({ body }) => {
-    // console.log(body);
+    console.log('block suggestion payload', JSON.stringify(body, null, 2));
     const userInput = body.value;
     let st = new Date();
     let et = new Date();
