@@ -1,6 +1,6 @@
 {
   "hooks": {
     "get-hooks": "deno run -q --allow-read --allow-net https://deno.land/x/deno_slack_hooks@1.1.0/mod.ts",
-    "build": "deno run -q --config=deno.jsonc --allow-read --allow-write --allow-net --allow-run --allow-env https://raw.githubusercontent.com/slackapi/deno-slack-hooks/bundle-assets/src/build.ts"
+    "build": "deno run -q --config=deno.jsonc --allow-read --allow-write --allow-net --allow-run --allow-env /Users/fmaj/src/deno-slack-hooks/src/build.ts"
   }
 }

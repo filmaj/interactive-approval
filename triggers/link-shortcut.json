@@ -1,8 +1,8 @@
 {
   "type": "shortcut",
-  "name": "Make a Request",
-  "description": "requests approval",
-  "workflow": "#/workflows/approval_wf",
+  "name": "Make a Removal",
+  "description": "request removal",
+  "workflow": "#/workflows/remove_wf",
   "shortcut": {},
   "inputs": {
     "interaction": {
