@@ -204,6 +204,36 @@ export const renderDenyModalMainPage = (inputs: any, metadata: any) => {
           text: "Block Suggestions reading a bundled 2MB CSV File",
         },
       },
+      {
+        type: "input",
+        block_id: "multiselect",
+        optional: true,
+        label: {
+          type: "plain_text",
+          text: "Optional MultiSelect test",
+        },
+        element: {
+          type: "multi_static_select",
+          action_id: "ms_select_input",
+          placeholder: {
+            type: "plain_text",
+            text: "Search for a colour",
+          },
+          options: [{
+            "text": {
+                "type": "plain_text",
+                "text": "Red"
+            },
+            "value": "red"
+          }, {
+            "text": {
+                "type": "plain_text",
+                "text": "Green"
+            },
+            "value": "green"
+          }],
+        },
+      },
       metadata.update ? {
         type: "input",
         block_id: "remediation_block",

@@ -31,7 +31,7 @@ export default SlackFunction(ApprovalFunction,
     });
 
     if (!resp.ok) {
-      console.log("Error posting message", resp);
+      return await client.functions.completeError({ function_execution_id: event.function_execution_id, error: 'could not post message: ' + JSON.stringify(resp) });
     }
 
     return {
@@ -55,6 +55,7 @@ export default SlackFunction(ApprovalFunction,
   const resp = await client.views.open(payload);
   if (!resp.ok) {
     console.log("error opening main modal view", resp);
+    return await client.functions.completeError({ function_execution_id: body.function_data.execution_id, error: 'could not open deny modal view: ' + JSON.stringify(resp) });
   }
 })
 .addBlockActionsHandler("cc_someone", async ({ body, client }) => {
