@@ -22,6 +22,9 @@ export const ApprovalFunction = DefineFunction({
         type: Schema.types.string,
         description: "Details Updated",
       },
+      interactivity: {
+        type: Schema.slack.types.interactivity,
+      }
     },
     required: [
       "requester_id",

@@ -1,3 +1,7 @@
+import { InputBlock, PlainTextOption, HeaderBlock, SectionBlock } from "@slack/types";
+import { walk } from "https://deno.land/std@0.67.0/fs/walk.ts";
+
+// deno-lint-ignore no-explicit-any
 export const renderApprovalMessage = (inputs: any) => {
   const blocks = [
     {
@@ -57,6 +61,7 @@ export const renderApprovalMessage = (inputs: any) => {
   return blocks;
 };
 
+// deno-lint-ignore no-explicit-any
 export const renderApprovalCompletedMessage = (inputs: any, outputs: any) => {
   const blocks = [
     {
@@ -116,6 +121,7 @@ export const renderApprovalViewedMessage = (viewerId: string) => {
   return blocks;
 };
 
+// deno-lint-ignore no-explicit-any
 export const renderApprovalOutcomeStatusMessage = (outputs: any) => {
   return `Request was ${
     outputs.approved ? "approved" : "denied"
@@ -129,8 +135,12 @@ export const renderApprovalOutcomeStatusMessage = (outputs: any) => {
 /**
  * @description Renders a modal view with a form the denier can fill out with denial reasons
  */
+// deno-lint-ignore no-explicit-any
 export const renderDenyModalMainPage = (inputs: any, metadata: any) => {
-  return {
+  const div_block = {
+    type: "divider",
+  };
+  const load = {
     "callback_id": "deny_modal_main",
     title: {
       type: "plain_text",
@@ -255,9 +265,7 @@ export const renderDenyModalMainPage = (inputs: any, metadata: any) => {
           type: "plain_text",
           text: "Whoops! Sorry, forgot about this field!",
         },
-      } : {
-        type: "divider",
-      },
+      } : div_block,
       {
         "type": "actions",
         "elements": [
@@ -286,8 +294,105 @@ export const renderDenyModalMainPage = (inputs: any, metadata: any) => {
     private_metadata: JSON.stringify(metadata),
     type: "modal",
   };
+  if (metadata.update) {
+    const lead_options: PlainTextOption[] = [];
+    for (let i = 0; i < 100; i++) {
+      lead_options.push({
+        text: {type: 'plain_text', text: 'User Name', emoji: true},
+        value: `User Name ${i}`
+      });
+    }
+    load.blocks = [ ...load.blocks, ];
+    const leads_circled_with: InputBlock = {
+      block_id: "leads_circled_with",
+      type: "input",
+      optional: true,
+      label: {
+        type: "plain_text",
+        text: "Leaders circled with: who have you talked this through with?",
+      },
+      element: {
+        type: "multi_static_select",
+        options: lead_options,
+        action_id: "action",
+      },
+    };
+    const files_header: HeaderBlock = {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: "Document Uploads and Links to messy notes",
+      },
+    };
+    const files_descr: SectionBlock = {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "Provide any additional links or uploads that might be helpful",
+      },
+    };
+    const submitted_files: InputBlock = {
+      block_id: "submitted_files",
+      type: "input",
+      optional: true,
+      label: {
+        type: "plain_text",
+        text:
+          "Upload any pages docs / numbers docs / screenshots you have on this",
+      },
+      element: {
+        // @ts-ignore-error
+        type: "file_input",
+        action_id: "action",
+        max_files: 1,
+      },
+    };
+    const notes_coda_link: InputBlock = {
+      block_id: "notes_coda_link",
+      type: "input",
+      optional: true,
+      element: {
+        type: "url_text_input",
+        action_id: "action",
+        initial_value: undefined,
+      },
+      label: {
+        type: "plain_text",
+        text: "Coda link to page of thoughts on this request",
+      },
+    };
+    const notes: InputBlock = {
+      block_id: "notes",
+      type: "input",
+      optional: true,
+      label: {
+        type: "plain_text",
+        text:
+          "Paste text from Apple Notes you've kept on this problem or let us know any other thoughts you have",
+      },
+      element: {
+        type: "plain_text_input",
+        action_id: "action",
+        multiline: true,
+        initial_value: undefined,
+      },
+    };
+    load.blocks = [
+      ...load.blocks,
+      leads_circled_with,
+      div_block,
+      files_header,
+      files_descr,
+      submitted_files,
+      notes_coda_link,
+      notes,
+    ];
+  }
+  console.log(JSON.stringify(load).length);
+  return load;
 };
 
+// deno-lint-ignore no-explicit-any
 export const renderDenyModalCCPage = (metadata: any) => {
   return {
     "callback_id": "deny_modal_cc",

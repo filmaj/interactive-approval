@@ -10,28 +10,43 @@ import {
   renderDenyModalSurprisePage,
 } from "./views.ts";
 import { readCSVObjects } from "https://deno.land/x/csv@v0.8.0/mod.ts";
+import annoyWfTrigger from "../../triggers/annoy_wf.ts";
+import AnnoyWorkflow from "../../workflows/annoy.ts";
 
-import { MyEvent } from "../../manifest.ts";
 // deno-lint-ignore no-explicit-any
 const accountCache: any[] = [];
 
 export default SlackFunction(ApprovalFunction,
-  async ({ inputs, client, event, team_id, enterprise_id }) => {
-    console.log("Top level function event", JSON.stringify(event, null, 2));
-    console.log(team_id, enterprise_id);
+  async (args) => {
+    const { inputs, client, team_id, enterprise_id } = args;
+    console.log("Top level function event", JSON.stringify(args, null, 2));
+    /*
+      * button based workflow
+    console.log('team_id:', team_id, 'enterprise_id:', enterprise_id);
     const resp = await client.chat.postMessage({
       channel: inputs.approval_channel_id,
       blocks: renderApprovalMessage(inputs),
-      metadata: {
-        event_type: MyEvent,
-        event_payload: {
-          aBoolean: true
-        },
-      }
     });
 
     if (!resp.ok) {
-      return await client.functions.completeError({ function_execution_id: event.function_execution_id, error: 'could not post message: ' + JSON.stringify(resp) });
+      return {
+        error: JSON.stringify(resp)
+      };
+    }
+    const now = new Date();
+    const inThreeSeconds = new Date(now.getTime() + (3 * 1000));
+    annoyWfTrigger.schedule.start_time = inThreeSeconds.toISOString();
+    annoyWfTrigger.inputs.channel_id = { value: inputs.approval_channel_id };
+    const r = await client.workflows.triggers.create<typeof AnnoyWorkflow.definition>(annoyWfTrigger);
+    */
+    const r = await client.views.open({
+      interactivity_pointer: inputs.interactivity?.interactivity_pointer,
+      view: renderDenyModalMainPage(inputs, {}),
+    });
+    if (!r.ok) {
+      return {
+        error: JSON.stringify(r)
+      };
     }
 
     return {
@@ -40,9 +55,10 @@ export default SlackFunction(ApprovalFunction,
   }
 ).addUnhandledEventHandler((args) => {
   console.log("This event was not handled", args);
-}).addBlockActionsHandler("deny_request", async ({ body, client, inputs, enterprise_id, team_id }) => {
-  console.log("Hello from deny button action handler", JSON.stringify(body, null, 2));
-  console.log(team_id, enterprise_id);
+}).addBlockActionsHandler("deny_request", async (args) => {
+  const { body, client, inputs, enterprise_id, team_id } = args;
+  console.log("Hello from deny button action handler", JSON.stringify(args, null, 2));
+  console.log('team_id:', team_id, 'enterprise_id:', enterprise_id);
 
   const payload = {
     interactivity_pointer: body.interactivity.interactivity_pointer,
@@ -58,8 +74,10 @@ export default SlackFunction(ApprovalFunction,
     return await client.functions.completeError({ function_execution_id: body.function_data.execution_id, error: 'could not open deny modal view: ' + JSON.stringify(resp) });
   }
 })
-.addBlockActionsHandler("cc_someone", async ({ body, client }) => {
-  console.log("Hello from CC button action handler", body);
+.addBlockActionsHandler("cc_someone", async (args) => {
+  const { body, client, team_id, enterprise_id } = args;
+  console.log("Hello from CC button action handler", args);
+  console.log('team_id:', team_id, 'enterprise_id:', enterprise_id);
 
   const payload = {
     trigger_id: body.interactivity.interactivity_pointer,
@@ -71,8 +89,10 @@ export default SlackFunction(ApprovalFunction,
     console.log("error opening cc modal view", resp);
   }
 })
-.addBlockActionsHandler("surprise", async ({ body, client }) => {
-  console.log("Hello from surprise button action handler");
+.addBlockActionsHandler("surprise", async (args) => {
+  const { body, client, team_id, enterprise_id } = args;
+  console.log("Hello from surprise button action handler", JSON.stringify(args, null, 2));
+  console.log('team_id:', team_id, 'enterprise_id:', enterprise_id);
 
   const payload = {
     trigger_id: body.interactivity.interactivity_pointer,
@@ -84,9 +104,10 @@ export default SlackFunction(ApprovalFunction,
     console.log("error opening surprise modal view", resp);
   }
 })
-.addBlockActionsHandler("approve_request", async ({ inputs, action, body, client, team_id, enterprise_id }) => {
-  console.log("Hello from approve button action handler", action);
-  console.log(team_id, enterprise_id);
+.addBlockActionsHandler("approve_request", async (args) => {
+  const { inputs, body, client, team_id, enterprise_id } = args;
+  console.log("Hello from approve button action handler", args);
+  console.log('team_id:', team_id, 'enterprise_id:', enterprise_id);
   const outputs = {
     reviewer: body.user.id,
     approved: true,
@@ -121,8 +142,10 @@ export default SlackFunction(ApprovalFunction,
   });
 }).addViewSubmissionHandler(
   "deny_modal_cc",
-  async ({ client, view, inputs }) => {
-    console.log("Hello from CC view submission handler");
+  async (args) => {
+    const { client, view, inputs, team_id, enterprise_id } = args;
+    console.log("Hello from CC view submission handler", JSON.stringify(args, null, 2));
+    console.log('team_id:', team_id, 'enterprise_id:', enterprise_id);
     const { messageTS, update } = JSON.parse(view.private_metadata || "{}");
     const userToNotify = view.state.values?.cc_block?.cc_user?.selected_user;
     console.log(`will notify ${userToNotify} of request`);
@@ -137,16 +160,19 @@ export default SlackFunction(ApprovalFunction,
       console.log("Error notifying HR", msgResp.error);
     }
   },
-).addViewSubmissionHandler("deny_modal_surprise", () => {
-  console.log("Hello from surprise view submission handler");
+).addViewSubmissionHandler("deny_modal_surprise", (args) => {
+  const { team_id, enterprise_id } = args;
+  console.log("Hello from surprise view submission handler", JSON.stringify(args, null, 2));
+  console.log('team_id:', team_id, 'enterprise_id:', enterprise_id);
   return {
     response_action: "clear",
   };
 }).addViewSubmissionHandler(
   "deny_modal_main",
-  async ({ body, client, view, inputs, team_id, enterprise_id }) => {
-    console.log("Hello from main view submission handler", JSON.stringify(body, null, 2));
-    console.log(team_id, enterprise_id);
+  async (args) => {
+    const { body, client, view, inputs, team_id, enterprise_id } = args;
+    console.log("Hello from main view submission handler", JSON.stringify(args, null, 2));
+    console.log('team_id:', team_id, 'enterprise_id:', enterprise_id);
     console.log('view state values', view.state.values);
     const { messageTS, update } = JSON.parse(view.private_metadata || "{}");
 
@@ -177,6 +203,7 @@ export default SlackFunction(ApprovalFunction,
 
     // Push a new view to ask for remediation
     if (!update) {
+      /*
       return {
         response_action: "update",
         view: renderDenyModalMainPage(inputs, {
@@ -184,6 +211,19 @@ export default SlackFunction(ApprovalFunction,
           update: true,
         }),
       };
+      */
+      const updateResp = await client.views.update({
+        view: renderDenyModalMainPage(inputs, {
+          messageTS: JSON.parse(view.private_metadata || "{}").messageTS,
+          update: true,
+        }),
+        view_id: view.id,
+      });
+      console.log('views.update response ok?', typeof updateResp.ok, updateResp.ok);
+      if (!updateResp.ok) {
+        console.log(updateResp.error, updateResp.response_metadata);
+      }
+      return { completed: false };
     }
     const remediation =
       (view.state.values?.remediation_block?.remediation_input?.value ?? "")
@@ -199,14 +239,19 @@ export default SlackFunction(ApprovalFunction,
       console.log("error sending msg", msgResp);
     }
     // Remove the button from the approval message
-    const updateMsgResp = await client.chat.update({
-      channel: inputs.approval_channel_id,
-      ts: outputs.message_ts,
-      blocks: renderApprovalCompletedMessage(
-        inputs,
-        outputs,
-      ),
-    });
+    if (outputs.message_ts) {
+      const updateMsgResp = await client.chat.update({
+        channel: inputs.approval_channel_id,
+        ts: outputs.message_ts,
+        blocks: renderApprovalCompletedMessage(
+          inputs,
+          outputs,
+        ),
+      });
+      if (!updateMsgResp.ok) {
+        console.log("error completing fn", updateMsgResp);
+      }
+    }
 
     const completeResp = await client.functions.completeSuccess({
       function_execution_id: body.function_data.execution_id,
@@ -218,9 +263,10 @@ export default SlackFunction(ApprovalFunction,
   },
 ).addViewClosedHandler(
   "deny_modal_main",
-  async ({ inputs, view, body, client, team_id, enterprise_id }) => {
-    console.log("Hello from main view closed handler", body);
-    console.log(team_id, enterprise_id);
+  async (args) => {
+    const { inputs, view, body, client, team_id, enterprise_id } = args;
+    console.log("Hello from main view closed handler", args);
+    console.log('team_id:', team_id, 'enterprise_id:', enterprise_id);
     if (body.view.callback_id === "deny_modal_main") {
       const userId = body.user.id;
       const { messageTS } = JSON.parse(view.private_metadata || "{}");
@@ -237,8 +283,10 @@ export default SlackFunction(ApprovalFunction,
   },
 ).addBlockSuggestionHandler(
   "ext_select_input",
-  async ({ body }) => {
-    console.log('block suggestion payload', JSON.stringify(body, null, 2));
+  async (args) => {
+    const { body, team_id, enterprise_id } = args;
+    console.log('block suggestion payload', JSON.stringify(args, null, 2));
+    console.log('team_id:', team_id, 'enterprise_id:', enterprise_id);
     const userInput = body.value;
     let st = new Date();
     let et = new Date();

@@ -50,6 +50,7 @@ const step2 = ApprovalWorkflow.addStep(ApprovalFunction, {
   requester_id: ApprovalWorkflow.inputs.interaction.interactor.id,
   subject: 'test',// step1.outputs.fields.subject,
   details: 'test',//step1.outputs.fields.details,
+  interactivity: ApprovalWorkflow.inputs.interaction,
 });
 
 // This is just really here to add some checks on using the outputs of the previous step
